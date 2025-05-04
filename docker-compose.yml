@@ -1,0 +1,25 @@
+#version: '3.8'
+#
+#services:
+#  constructor-service:
+#    build: ./constructor-service-java
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - python-bot-builder
+#
+#  python-bot-builder:
+#    build: ./bot-builder-python
+#    ports:
+#      - "5000:5000"
+#
+#  mongodb:
+#    image: mongo
+#    ports:
+#      - "27017:27017"
+
+  # (опціонально фронтенд)
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:3000"
