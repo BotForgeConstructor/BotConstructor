@@ -10,10 +10,15 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TelegramButtonService {
+public class TelegramInlineKeyboardService {
 
-    //btnsText - naming of buttons
-    //callBackData - data that will be sent to the bot when the button is pressed
+    /**
+     * Builds a keyboard with one row of buttons
+     *
+     * @param btnsText        the text of the buttons
+     * @param callBackData          the callback data for the buttons
+     *
+     */
     public InlineKeyboardMarkup buildButton(List<String> btnsText, List<String> callBackData) {
         List<InlineKeyboardButton> row = new ArrayList<>();
         for (int i = 0; i < btnsText.size(); i++) {

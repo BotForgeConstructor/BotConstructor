@@ -1,9 +1,9 @@
 package org.demchenko.tg.handler;
 
 import lombok.RequiredArgsConstructor;
-import org.demchenko.tg.service.impl.TelegramButtonService;
+import org.demchenko.tg.service.impl.TelegramInlineKeyboardService;
 import org.demchenko.tg.service.impl.TelegramMessageService;
-import org.demchenko.tg.service.input.AbstractCommandInputService;
+import org.demchenko.tg.service.input.AbstractCommandInputHandler;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -11,10 +11,10 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class StartCommandHandler extends AbstractCommandInputService {
+public class StartCommandHandler extends AbstractCommandInputHandler {
 
     private final TelegramMessageService telegramMessageService;
-    private final TelegramButtonService telegramButtonService;
+    private final TelegramInlineKeyboardService telegramInlineKeyboardService;
 
     @Override
     protected String getCommandText() {
@@ -26,9 +26,9 @@ public class StartCommandHandler extends AbstractCommandInputService {
         telegramMessageService.sendMessage(
                 update.getMessage().getChatId(),
                 "Chose function for your bot:",
-                telegramButtonService.buildButton(
+                telegramInlineKeyboardService.buildButton(
                         List.of("Create", "Edit"),
-                        List.of("START_MENU:START", "START_MENU:EDIT")
+                        List.of("CREATE:START_MENU", "EDIT:START_MENU")
                 )
         );
     }

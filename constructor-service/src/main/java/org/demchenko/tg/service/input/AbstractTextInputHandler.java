@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Service
-public abstract class AbstractTextInputService implements BotInputService {
+public abstract class AbstractTextInputHandler implements BotInputService {
 
     private Update currentUpdate;
 

@@ -1,12 +1,11 @@
-
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: root
+    password: postgres
   jpa:
     hibernate:
-      ddl-auto: create
+#      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -21,3 +20,6 @@ bot:
   token: 7713894529:AAGgcwHtYi6uv38Z2T7KIMRTEKVjsoRbkz4
   username: bott_forge_bot
 
+video:
+  lesson:
+    dir: assets/videos/video.mp4

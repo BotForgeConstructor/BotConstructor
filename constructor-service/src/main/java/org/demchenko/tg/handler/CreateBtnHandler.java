@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.demchenko.tg.data.UserService;
 import org.demchenko.tg.enums.Plan;
 import org.demchenko.tg.model.UserData;
-import org.demchenko.tg.service.impl.TelegramButtonService;
+import org.demchenko.tg.service.impl.TelegramInlineKeyboardService;
 import org.demchenko.tg.service.impl.TelegramMessageService;
 import org.demchenko.tg.service.impl.TelegramReplyKeyboardService;
-import org.demchenko.tg.service.input.AbstractBtnUnderTextInputService;
+import org.demchenko.tg.service.input.AbstractInlineKeyboardHandler;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -15,16 +15,16 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class CreateBtnHandler extends AbstractBtnUnderTextInputService {
+public class CreateBtnHandler extends AbstractInlineKeyboardHandler {
 
-    private final TelegramButtonService telegramButtonService;
+    private final TelegramInlineKeyboardService telegramInlineKeyboardService;
     private final TelegramReplyKeyboardService telegramReplyKeyboardService;
     private final TelegramMessageService telegramMessageService;
     private final UserService userService;
 
     @Override
     protected String getPrefix() {
-        return "START_MENU";
+        return "CREATE";
     }
 
     @Override
@@ -34,16 +34,26 @@ public class CreateBtnHandler extends AbstractBtnUnderTextInputService {
         if(userData.getCountOfBots() >= 1 && userData.getPlan() == Plan.FREE){
             telegramMessageService.sendMessage(update.getMessage().getChatId(),
                     "You need to update your plan to create new bot.",
-                    telegramButtonService.buildButton(
+                    telegramInlineKeyboardService.buildButton(
                             List.of("MENU"),
                             List.of("CREATE_MENU:MENU")
                     )
             );
             return;
         }
+        telegramMessageService.sendMessage(update.getCallbackQuery().getFrom().getId(), "To create a bot, follow these steps:\u2028");
+
         telegramMessageService.sendMessage(update.getCallbackQuery().getFrom().getId(),
-                "1. Натисни сюди ➔ @BotFather\u20282. Натисни /newbot\u20283. Введи ім'я бота та посилання\u20284. Скопіюй токен\u20285. Відправ токен наступним повідомленням\u2028",
-                telegramReplyKeyboardService.buildMainMenu()
+            "MarkdownV2",
+                 "1\\. Натисни сюди ➔ @BotFather\u2028\n" +
+                      "2\\. Напиши `/newbot`\n" +
+                      "3\\. Введи ім'я бота та посилання\n" +
+                      "4\\. Скопіюй токен\n" +
+                      "5\\. Відправ токен наступним повідомленням\uD83D\uDC47\uD83C\uDFFB",
+                telegramInlineKeyboardService.buildButton(
+                        List.of("Video lesson", "Slide instruction", "Back"),
+                        List.of("VIDEO:CREATE", "SLIDE:CREATE", "BACK:CREATE")
+                )
         );
     }
 }

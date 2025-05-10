@@ -5,20 +5,20 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Service
-public abstract class AbstractBtnUnderKeyboardInputService implements BotInputService {
+public abstract class AbstractCommandInputHandler implements BotInputService {
 
     @Override
     public boolean canHandle(Update update) {
         return update.hasMessage()
                 && update.getMessage().hasText()
-                && update.getMessage().getText().equalsIgnoreCase(getButtonText());
+                && update.getMessage().getText().equalsIgnoreCase("/" + getCommandText()); //   / + start
     }
 
     @Override
     public void handle(Update update) {
-        processButton(update);
+        processCommand(update);
     }
 
-    protected abstract String getButtonText();
-    protected abstract void processButton(Update update);
+    protected abstract String getCommandText(); // типу "/start"
+    protected abstract void processCommand(Update update);
 }

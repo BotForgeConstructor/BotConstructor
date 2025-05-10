@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.Arrays;
 
 @Service
-public abstract class AbstractBtnUnderTextInputService implements BotInputService {
+public abstract class AbstractInlineKeyboardHandler implements BotInputService {
 
     private String buttonText;
 
@@ -24,7 +24,8 @@ public abstract class AbstractBtnUnderTextInputService implements BotInputServic
         processCallback(update, Arrays.copyOfRange(params, 1, params.length));
     }
 
-    protected abstract String getPrefix(); // наприклад "BOOK_CALL", "DELETE_USER"
+    // example "BOOK:CREATE" | where BOOK is redirect directory, CREATE is current directory
+    protected abstract String getPrefix();
     protected abstract void processCallback(Update update, String[] params);
 }
 
