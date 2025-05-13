@@ -11,7 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.io.InputStream;
 
-import static org.demchenko.ConstructorApplication.cachedVideoFile;
+//import static org.demchenko.ConstructorApplication.cachedVideoFile;
 
 @Slf4j
 @Service
@@ -21,11 +21,15 @@ public class TelegramMessageService  {
     private final HelpBotSender helpBotSender;
 
     public void sendMessage(Long chatId, String text) {
-        sendMessage(chatId, text, null);
+        sendMessage(chatId, "", text, null);
     }
 
     public void sendMessage(Long chatId, String text, ReplyKeyboard replyKeyboard) {
         sendMessage(chatId, "", text, replyKeyboard);
+    }
+
+    public void sendMessage(Long chatId, String parseMode, String text) {
+        sendMessage(chatId, parseMode, text, null);
     }
 
     /**
@@ -51,30 +55,15 @@ public class TelegramMessageService  {
         executeMessage(sendMessage);
     }
     
-    public void sendVideo(Long chatId, ReplyKeyboard replyKeyboard, String videoPath) {
-        sendVideo(chatId, "", "", replyKeyboard, videoPath);
-    }
-    
-    public void sendVideo(Long chatId, String parseMode, String text, ReplyKeyboard replyKeyboard, String videoPath) {
-        SendVideo sendVideo = SendVideo
-                .builder()
-                .chatId(chatId.toString())
-                .parseMode(parseMode.isEmpty() ? "Markdown" : parseMode)
-                .caption(text)
-                .video(new InputFile(cachedVideoFile))
-                .replyMarkup(replyKeyboard)
-                .build();
-        executeVideo(sendVideo);
+
+    public void sendAnimation(Long chatId, ReplyKeyboard replyKeyboard, String videoPath, String fileName) {
+        sendAnimation(chatId, "", "", replyKeyboard, videoPath, fileName);
     }
 
-    public void sendAnimation(Long chatId, ReplyKeyboard replyKeyboard, String videoPath) {
-        sendAnimation(chatId, "", "", replyKeyboard, videoPath);
-    }
-
-    public void sendAnimation(Long chatId, String parseMode, String text, ReplyKeyboard replyKeyboard, String videoPath) {
+    public void sendAnimation(Long chatId, String parseMode, String text, ReplyKeyboard replyKeyboard, String videoPath, String fileName) {
         try {
 
-            InputStream gifStream = getClass().getClassLoader().getResourceAsStream("assets/animations/output.gif");
+            InputStream gifStream = getClass().getClassLoader().getResourceAsStream(videoPath);
 
             SendAnimation sendAnimation = SendAnimation
                     .builder()
@@ -82,7 +71,7 @@ public class TelegramMessageService  {
                     .parseMode(parseMode.isEmpty() ? "Markdown" : parseMode)
                     .caption(text)
                     .replyMarkup(replyKeyboard)
-                    .animation(new InputFile(gifStream, "output.gif"))
+                    .animation(new InputFile(gifStream, fileName))
                     .build();
             executeAnimation(sendAnimation);
         } catch (Exception e) {
@@ -99,14 +88,6 @@ public class TelegramMessageService  {
         }
     }
 
-    // Виконання методу SendVideo
-    private void executeVideo(SendVideo sendVideo) {
-        try {
-            helpBotSender.execute(sendVideo);
-        } catch (Exception e) {
-            log.error("Exception executing SendVideo: ", e);
-        }
-    }
     // Виконання методу SendVideo
     private void executeAnimation(SendAnimation sendAnimation) {
         try {

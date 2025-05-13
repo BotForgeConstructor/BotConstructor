@@ -28,7 +28,7 @@ public class StartCommandHandler extends AbstractCommandInputHandler {
                 "Chose function for your bot:",
                 telegramInlineKeyboardService.buildButton(
                         List.of("Create", "Edit"),
-                        List.of("CREATE:START_MENU", "EDIT:START_MENU")
+                        List.of("CREATE:start", "EDIT:start")
                 )
         );
     }

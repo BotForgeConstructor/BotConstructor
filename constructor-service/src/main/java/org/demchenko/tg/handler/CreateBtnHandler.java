@@ -52,7 +52,7 @@ public class CreateBtnHandler extends AbstractInlineKeyboardHandler {
                       "5\\. Відправ токен наступним повідомленням\uD83D\uDC47\uD83C\uDFFB",
                 telegramInlineKeyboardService.buildButton(
                         List.of("Video lesson", "Slide instruction", "Back"),
-                        List.of("VIDEO:CREATE", "SLIDE:CREATE", "BACK:CREATE")
+                        List.of("GIF:CREATE:start", "SLIDE:CREATE:start", "BACK:CREATE:start")
                 )
         );
     }

@@ -20,6 +20,5 @@ public abstract class AbstractBtnReplyKeyboardHandler implements BotInputService
     }
 
     protected abstract String getButtonText();
-    protected abstract String getCallBackText();
     protected abstract void processButton(Update update);
 }

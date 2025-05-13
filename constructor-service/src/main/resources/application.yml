@@ -22,4 +22,4 @@ bot:
 
 video:
   lesson:
-    dir: assets/videos/video.mp4
+    dir: assets/animations/output.gif
