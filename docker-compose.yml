@@ -1,25 +1,42 @@
-#version: '3.8'
-#
-#services:
-#  constructor-service:
-#    build: ./constructor-service-java
-#    ports:
-#      - "8080:8080"
-#    depends_on:
-#      - python-bot-builder
-#
-#  python-bot-builder:
-#    build: ./bot-builder-python
-#    ports:
-#      - "5000:5000"
-#
-#  mongodb:
-#    image: mongo
-#    ports:
-#      - "27017:27017"
+name: bot-constructor
 
-  # (опціонально фронтенд)
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
+services:
+#  constructor-service:
+#    build:
+#      context: ./constructor-service
+#      dockerfile: Dockerfile
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bot_constructor}
+#      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-bot_constructor}
+#      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_password}
+#      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+#      BOT_TOKEN: ${BOT_TOKEN:?Set BOT_TOKEN in .env before starting the application}
+#      BOT_USERNAME: ${BOT_USERNAME:?Set BOT_USERNAME in .env before starting the application}
+#      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75.0}
+#    ports:
+#      - "${APP_PORT:-8080}:8080"
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    restart: unless-stopped
+
+  postgres:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bot_constructor}
+      POSTGRES_USER: ${POSTGRES_USER:-bot_constructor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
