@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/bot_constructor}
+    username: ${SPRING_DATASOURCE_USERNAME:bot_constructor}
+    password: ${SPRING_DATASOURCE_PASSWORD:local_dev_password}
+app:
+  web:
+    url: ${APP_WEB_URL:http://localhost:5173}
+  telegram:
+    management:
+      enabled: ${APP_TELEGRAM_MANAGEMENT_ENABLED:false}
+      connection-mode: ${APP_TELEGRAM_MANAGEMENT_CONNECTION_MODE:LONG_POLLING}
+      token: ${APP_TELEGRAM_MANAGEMENT_TOKEN:}
+      username: ${APP_TELEGRAM_MANAGEMENT_USERNAME:}

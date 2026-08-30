@@ -1,0 +1,486 @@
+openapi: 3.1.0
+info:
+  title: Bot Constructor API
+  version: 1.0.0
+  description: Public MVP contract. Contract-only operations are identified in repository documentation.
+servers:
+  - url: /api/v1
+tags:
+  - {name: Auth}
+  - {name: Workspace}
+  - {name: Bots}
+  - {name: Credentials}
+  - {name: Draft}
+  - {name: Validation}
+  - {name: Publish}
+  - {name: Versions}
+  - {name: Status}
+  - {name: Health}
+security:
+  - bearerSession: []
+paths:
+  /api/v1/auth/telegram/session:
+    post:
+      tags: [Auth]
+      operationId: exchangeTelegramSession
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TelegramAuthRequest'}}}}
+      responses:
+        '200': {description: Platform session created, content: {application/json: {schema: {$ref: '#/components/schemas/AuthResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {$ref: '#/components/responses/InternalError'}
+  /api/v1/me:
+    get:
+      tags: [Workspace]
+      operationId: getCurrentUser
+      responses:
+        '200': {description: Current user and workspaces, content: {application/json: {schema: {$ref: '#/components/schemas/CurrentUserResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/v1/workspaces:
+    get:
+      tags: [Workspace]
+      operationId: listWorkspaces
+      responses:
+        '200': {description: Accessible workspaces, content: {application/json: {schema: {$ref: '#/components/schemas/WorkspaceListResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      tags: [Workspace]
+      operationId: createWorkspace
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateWorkspaceRequest'}}}}
+      responses:
+        '201': {description: Workspace created, content: {application/json: {schema: {$ref: '#/components/schemas/WorkspaceSummary'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/workspaces/{workspaceId}/bots:
+    parameters:
+      - {$ref: '#/components/parameters/WorkspaceId'}
+    get:
+      tags: [Bots]
+      operationId: listBots
+      responses:
+        '200': {description: Workspace bots, content: {application/json: {schema: {$ref: '#/components/schemas/BotListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Bots]
+      operationId: createBot
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateBotRequest'}}}}
+      responses:
+        '201': {description: Bot created, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/bots/{botId}:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    get:
+      tags: [Bots]
+      operationId: getBot
+      responses:
+        '200': {description: Bot metadata, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [Bots]
+      operationId: updateBot
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateBotRequest'}}}}
+      responses:
+        '200': {description: Updated bot, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/telegram-credential:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    put:
+      tags: [Credentials]
+      operationId: setBotCredential
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TelegramCredentialRequest'}}}}
+      responses:
+        '200': {description: Safe credential status, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialStatusResponse'}}}}
+        '400': {$ref: '#/components/responses/InvalidCredential'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/TelegramUnavailable'}
+    delete:
+      tags: [Credentials]
+      operationId: removeBotCredential
+      responses:
+        '200': {description: Credential disconnected, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialStatusResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/flows/draft:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    get:
+      tags: [Draft]
+      operationId: getFlowDraft
+      responses:
+        '200':
+          description: Current mutable draft
+          headers: {ETag: {$ref: '#/components/headers/ETag'}}
+          content: {application/json: {schema: {$ref: '#/components/schemas/FlowDraft'}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Draft]
+      operationId: saveFlowDraft
+      parameters:
+        - {$ref: '#/components/parameters/IfMatch'}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/FlowDraft'}}}}
+      responses:
+        '200':
+          description: Saved draft
+          headers: {ETag: {$ref: '#/components/headers/ETag'}}
+          content: {application/json: {schema: {$ref: '#/components/schemas/FlowDraftSaveResponse'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '412': {$ref: '#/components/responses/PreconditionFailed'}
+  /api/v1/bots/{botId}/flows/draft/validate:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    post:
+      tags: [Validation]
+      operationId: validateFlowDraft
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/FlowValidationRequest'}}}}
+      responses:
+        '200': {description: Validation result, content: {application/json: {schema: {$ref: '#/components/schemas/FlowValidationResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/flows/publish:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    post:
+      tags: [Publish]
+      operationId: publishFlow
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PublishRequest'}}}}
+      responses:
+        '201': {description: Version published and activated, content: {application/json: {schema: {$ref: '#/components/schemas/PublishResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/bots/{botId}/flows/versions:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    get:
+      tags: [Versions]
+      operationId: listFlowVersions
+      responses:
+        '200': {description: Published versions, content: {application/json: {schema: {$ref: '#/components/schemas/FlowVersionListResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/flows/versions/{versionId}:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+      - {$ref: '#/components/parameters/VersionId'}
+    get:
+      tags: [Versions]
+      operationId: getFlowVersion
+      responses:
+        '200': {description: Immutable version, content: {application/json: {schema: {$ref: '#/components/schemas/FlowVersionDetail'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/flows/versions/{versionId}/activate:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+      - {$ref: '#/components/parameters/VersionId'}
+    post:
+      tags: [Versions]
+      operationId: activateFlowVersion
+      requestBody: {required: false, content: {application/json: {schema: {$ref: '#/components/schemas/ActivateVersionRequest'}}}}
+      responses:
+        '200': {description: Compatible version activated, content: {application/json: {schema: {$ref: '#/components/schemas/FlowVersionSummary'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/bots/{botId}/runtime-status:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    get:
+      tags: [Bots]
+      operationId: getBotRuntimeStatus
+      responses:
+        '200': {description: Safe bot status, content: {application/json: {schema: {$ref: '#/components/schemas/BotRuntimeStatusResponse'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/status:
+    get:
+      tags: [Status]
+      operationId: getPlatformStatus
+      security: []
+      responses:
+        '200': {description: Safe platform status, content: {application/json: {schema: {$ref: '#/components/schemas/StatusResponse'}}}}
+        '500': {$ref: '#/components/responses/InternalError'}
+  /api/v1/health:
+    get:
+      tags: [Health]
+      operationId: getApplicationHealth
+      security: []
+      responses:
+        '200': {description: Basic health, content: {application/json: {schema: {$ref: '#/components/schemas/HealthResponse'}}}}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+components:
+  securitySchemes:
+    bearerSession: {type: http, scheme: bearer, bearerFormat: opaque-session-token}
+  parameters:
+    WorkspaceId: {name: workspaceId, in: path, required: true, schema: {type: string, format: uuid}}
+    BotId: {name: botId, in: path, required: true, schema: {type: string, format: uuid}}
+    VersionId: {name: versionId, in: path, required: true, schema: {type: string, format: uuid}}
+    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+    IfMatch: {name: If-Match, in: header, required: true, schema: {type: string, minLength: 1, maxLength: 128}}
+  headers:
+    ETag: {description: Opaque draft revision tag, schema: {type: string}}
+  responses:
+    BadRequest: {description: Invalid request, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    Unauthorized: {description: Authentication failed, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    Forbidden: {description: Access denied, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    NotFound: {description: Resource not found, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    Conflict: {description: State conflict, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    PreconditionFailed: {description: Stale revision, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    InvalidCredential: {description: Invalid Telegram credential, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    TelegramUnavailable: {description: Telegram API unavailable, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    InternalError: {description: Safe internal error, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    ServiceUnavailable: {description: Service unavailable, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+  schemas:
+    TelegramAuthRequest:
+      type: object
+      additionalProperties: false
+      required: [initData]
+      properties: {initData: {type: string, minLength: 1, maxLength: 8192, writeOnly: true}}
+    AuthResponse:
+      type: object
+      additionalProperties: false
+      required: [accessToken, expiresAt, user, defaultWorkspace]
+      properties:
+        accessToken: {type: string, minLength: 1}
+        expiresAt: {type: string, format: date-time}
+        user: {$ref: '#/components/schemas/UserSummary'}
+        defaultWorkspace: {$ref: '#/components/schemas/WorkspaceSummary'}
+    UserSummary:
+      type: object
+      additionalProperties: false
+      required: [id]
+      properties: {id: {type: string, format: uuid}, displayName: {type: [string, 'null'], maxLength: 256}}
+    CurrentUserResponse:
+      type: object
+      additionalProperties: false
+      required: [user, workspaces]
+      properties:
+        user: {$ref: '#/components/schemas/UserSummary'}
+        workspaces: {type: array, items: {$ref: '#/components/schemas/WorkspaceSummary'}}
+    MembershipRole: {type: string, enum: [OWNER, MEMBER]}
+    WorkspaceSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, role]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 120}
+        role: {$ref: '#/components/schemas/MembershipRole'}
+    WorkspaceListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/WorkspaceSummary'}}}
+    CreateWorkspaceRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties: {name: {type: string, minLength: 1, maxLength: 120}}
+    CreateBotRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName]
+      properties: {displayName: {type: string, minLength: 1, maxLength: 120}}
+    UpdateBotRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName]
+      properties: {displayName: {type: string, minLength: 1, maxLength: 120}}
+    BotStatus: {type: string, enum: [PENDING_CREDENTIAL, CONNECTED, DISABLED]}
+    BotResponse:
+      type: object
+      additionalProperties: false
+      required: [id, workspaceId, displayName, status, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        workspaceId: {type: string, format: uuid}
+        displayName: {type: string, minLength: 1, maxLength: 120}
+        telegramBotId: {type: [integer, 'null'], format: int64, minimum: 1}
+        telegramUsername: {type: [string, 'null'], maxLength: 64}
+        status: {$ref: '#/components/schemas/BotStatus'}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    BotListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/BotResponse'}}}
+    TelegramCredentialRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties: {token: {type: string, minLength: 20, maxLength: 256, writeOnly: true}}
+    CredentialStatus: {type: string, enum: [VERIFIED, DISCONNECTED]}
+    CredentialStatusResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {$ref: '#/components/schemas/CredentialStatus'}
+        telegramBotId: {type: [integer, 'null'], format: int64, minimum: 1}
+        telegramUsername: {type: [string, 'null'], maxLength: 64}
+    FlowDraft:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, flowId, revision, startNodeId, nodes, edges]
+      properties:
+        schemaVersion: {type: string, const: '1.0'}
+        flowId: {type: string, format: uuid}
+        revision: {type: integer, format: int64, minimum: 0}
+        startNodeId: {type: string, minLength: 1, maxLength: 128}
+        nodes: {type: array, items: {$ref: '#/components/schemas/FlowNode'}}
+        edges: {type: array, items: {$ref: '#/components/schemas/FlowEdge'}}
+    FlowNode:
+      type: object
+      additionalProperties: false
+      required: [id, type, typeVersion, position, config, ports]
+      properties:
+        id: {type: string, minLength: 1, maxLength: 128}
+        type: {type: string, minLength: 1, maxLength: 64}
+        typeVersion: {type: integer, minimum: 1}
+        position: {$ref: '#/components/schemas/FlowPosition'}
+        config: {type: object, additionalProperties: true}
+        ports: {type: array, items: {$ref: '#/components/schemas/FlowPort'}}
+    FlowPosition:
+      type: object
+      additionalProperties: false
+      required: [x, y]
+      properties: {x: {type: number, format: double}, y: {type: number, format: double}}
+    FlowPort:
+      type: object
+      additionalProperties: false
+      required: [id, direction, kind]
+      properties:
+        id: {type: string}
+        direction: {type: string, enum: [INPUT, OUTPUT]}
+        kind: {type: string}
+    FlowEndpoint:
+      type: object
+      additionalProperties: false
+      required: [nodeId, portId]
+      properties: {nodeId: {type: string}, portId: {type: string}}
+    FlowEdge:
+      type: object
+      additionalProperties: false
+      required: [id, source, target]
+      properties:
+        id: {type: string}
+        source: {$ref: '#/components/schemas/FlowEndpoint'}
+        target: {$ref: '#/components/schemas/FlowEndpoint'}
+    FlowDraftSaveResponse:
+      type: object
+      additionalProperties: false
+      required: [revision, updatedAt]
+      properties: {revision: {type: integer, format: int64, minimum: 0}, updatedAt: {type: string, format: date-time}}
+    FlowValidationRequest:
+      type: object
+      additionalProperties: false
+      properties: {draft: {$ref: '#/components/schemas/FlowDraft'}}
+    ValidationStatus: {type: string, enum: [VALID, INVALID]}
+    ValidationIssue:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        nodeId: {type: [string, 'null']}
+        path: {type: [string, 'null']}
+    FlowValidationResponse:
+      type: object
+      additionalProperties: false
+      required: [status, issues]
+      properties:
+        status: {$ref: '#/components/schemas/ValidationStatus'}
+        issues: {type: array, items: {$ref: '#/components/schemas/ValidationIssue'}}
+    PublishRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties: {expectedRevision: {type: integer, format: int64, minimum: 0}}
+    PublishResponse:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties: {version: {$ref: '#/components/schemas/FlowVersionSummary'}}
+    FlowVersionSummary:
+      type: object
+      additionalProperties: false
+      required: [id, botId, versionNumber, publishedAt, active]
+      properties:
+        id: {type: string, format: uuid}
+        botId: {type: string, format: uuid}
+        versionNumber: {type: integer, format: int64, minimum: 1}
+        publishedAt: {type: string, format: date-time}
+        active: {type: boolean}
+    FlowVersionDetail:
+      type: object
+      additionalProperties: false
+      required: [summary, definition]
+      properties:
+        summary: {$ref: '#/components/schemas/FlowVersionSummary'}
+        definition: {$ref: '#/components/schemas/FlowDraft'}
+    FlowVersionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: '#/components/schemas/FlowVersionSummary'}}}
+    ActivateVersionRequest:
+      type: object
+      additionalProperties: false
+      properties: {reason: {type: string, maxLength: 256}}
+    BotRuntimeStatusResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties: {status: {type: string, enum: [ACTIVE, INACTIVE, ERROR]}}
+    StatusResponse:
+      type: object
+      additionalProperties: false
+      required: [status, apiVersion, applicationVersion]
+      properties:
+        status: {type: string, enum: [UP]}
+        apiVersion: {type: string, const: v1}
+        applicationVersion: {type: string, minLength: 1, maxLength: 64}
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties: {status: {type: string, enum: [UP, DEGRADED]}}
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [path, message]
+      properties:
+        path: {type: string, minLength: 1}
+        message: {type: string, minLength: 1}
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, traceId, fieldErrors]
+      properties:
+        code: {type: string, minLength: 1}
+        message: {type: string, minLength: 1}
+        traceId: {type: string, minLength: 1}
+        fieldErrors: {type: array, items: {$ref: '#/components/schemas/FieldError'}}
