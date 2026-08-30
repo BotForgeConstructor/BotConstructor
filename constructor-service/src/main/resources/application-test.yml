@@ -1,0 +1,7 @@
+app:
+  web:
+    url: https://test.invalid
+  telegram:
+    management:
+      enabled: false
+      connection-mode: LONG_POLLING

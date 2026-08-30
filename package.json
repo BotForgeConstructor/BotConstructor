@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "codeburn": "^0.9.22",
+    "copilot": "^0.0.2",
+    "maven": "^5.0.0"
+  }
+}

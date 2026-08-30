@@ -1,5 +1,7 @@
 target/
+.m2/
 .env
+*.mov
 .env.*
 !.env.example
 !.mvn/wrapper/maven-wrapper.jar

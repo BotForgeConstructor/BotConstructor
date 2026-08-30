@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-23 AS build
+FROM maven:3.9.12-eclipse-temurin-21 AS build
 
 WORKDIR /workspace
 
@@ -8,7 +8,7 @@ RUN mvn -B -ntp dependency:go-offline
 COPY src ./src
 RUN mvn -B -ntp package
 
-FROM eclipse-temurin:23-jre-noble AS runtime
+FROM eclipse-temurin:21-jre-noble AS runtime
 
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 
@@ -19,4 +19,4 @@ USER app
 EXPOSE 8080
 
 ENV JAVA_OPTS=""
-ENTRYPOINT ["sh", "-c", "exec java --enable-preview $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

@@ -15,9 +15,10 @@ The root `docker-compose.yml` describes additional services, but its referenced 
 Run Maven commands from the service directory:
 
 - `cd constructor-service`
-- `mvn clean package`: compile with Java 23 preview support and build the JAR.
+- `mvn clean package`: compile for Java 21 without preview features and build the JAR.
 - `mvn spring-boot:run`: launch the application locally on the configured Spring port.
-- `mvn test`: run the test suite when tests and a test dependency are added.
+- `mvn test`: run JUnit unit, configuration, and ArchUnit tests.
+- `mvn clean verify`: run the complete suite, including REST and PostgreSQL Testcontainers integration tests (Docker required).
 
 A local PostgreSQL database must match the datasource settings (`localhost:5433/bot_constructor`, user `bot_constructor`, password `local_dev_password` by default) before the application starts successfully.
 
@@ -27,7 +28,7 @@ Use four-space indentation and standard Java conventions: `PascalCase` for types
 
 ## Testing Guidelines
 
-No tests or coverage threshold currently exist. Add `spring-boot-starter-test` before introducing JUnit 5 tests. Name unit tests `*Test.java` and broader Spring context tests `*IntegrationTest.java`. Mock Telegram API boundaries and cover handler routing, state transitions, and persistence behavior. Run `mvn test` before submitting changes.
+JUnit 5, ArchUnit, and PostgreSQL Testcontainers are configured. Name unit/architecture tests `*Test.java` and integration tests `*IT.java`. Mock Telegram API boundaries and cover handler routing, state transitions, and persistence behavior. Run `mvn clean verify` before submitting changes.
 
 ## Commit & Pull Request Guidelines
 
