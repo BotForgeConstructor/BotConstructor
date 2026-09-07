@@ -11,4 +11,6 @@ public interface MembershipRepository extends JpaRepository<MembershipEntity, UU
     List<MembershipEntity> findAllByUserId(UUID userId);
 
     Optional<MembershipEntity> findByWorkspaceIdAndUserId(UUID workspaceId, UUID userId);
+
+    boolean existsByWorkspaceIdAndUserId(UUID workspaceId, UUID userId);
 }

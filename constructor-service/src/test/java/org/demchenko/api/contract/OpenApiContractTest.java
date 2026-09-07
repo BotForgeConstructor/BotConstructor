@@ -62,6 +62,13 @@ class OpenApiContractTest {
                 "/api/v1/bots/{botId}/flows/draft/validate", "/api/v1/bots/{botId}/flows/publish",
                 "/api/v1/bots/{botId}/flows/versions",
                 "/api/v1/bots/{botId}/flows/versions/{versionId}/activate");
+        assertThat(api.getPaths().get("/api/v1/bots/{botId}").getDelete()).isNull();
+        Operation credentialConnect = api.getPaths().get("/api/v1/bots/{botId}/telegram-credential").getPut();
+        assertThat(credentialConnect.getResponses())
+                .containsKeys("400", "401", "403", "404", "409", "429", "503");
+        Operation reconnect = api.getPaths().get("/api/v1/bots/{botId}/telegram-credential/reconnect").getPost();
+        assertThat(reconnect.getResponses())
+                .containsKeys("401", "403", "404", "409", "429", "503");
 
         Schema<?> credential = api.getComponents().getSchemas().get("TelegramCredentialRequest");
         assertThat(credential.getProperties()).containsOnlyKeys("token");

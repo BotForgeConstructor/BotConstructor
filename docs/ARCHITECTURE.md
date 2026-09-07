@@ -106,6 +106,16 @@ Delete policies are explicit: workspace owner and membership user references are
 
 `CON-01` is absent, so no flow tables or `active_flow_version_id` exist. The legacy `user_data` table is not canonical and must not receive new dependencies; it is retained because the existing Telegram create handler actively reads plan/bot-count prototype fields and the local schema could not be inspected while Docker was unavailable.
 
+## Authentication and tenant authorization (AUTH-01–AUTH-04)
+
+The HTTP auth path is `generated AuthApi -> TelegramAuthenticationController -> AuthenticateWithTelegramUseCase -> TelegramInitDataVerifier -> transactional identity/workspace bootstrap -> PlatformSessionIssuer`. First-party Telegram verification uses HMAC-SHA-256 with the management bot token, constant-time hash comparison, a five-minute configurable replay window, and 30-second configurable future skew. Signed values are percent-decoded but never normalized or reserialized before verification; raw `initData` is neither stored nor logged.
+
+Bootstrap uses a PostgreSQL transaction advisory lock keyed by Telegram user ID. V2 adds `workspaces.is_default` and a partial unique index limiting each owner to one default Workspace; the same transaction ensures the OWNER Membership. Existing owners are backfilled deterministically by earliest creation time and UUID, without deleting data.
+
+Platform sessions are stateless HS256 JWTs signed with an independent Base64 key of at least 256 bits. Required claims are `sub`, `iss`, `aud`, `iat`, `exp`, and `jti`; TTL defaults to 15 minutes. Spring Security allows only HS256, validates issuer/audience/time, disables form login, Basic auth, CSRF state and server sessions, and reads bearer tokens only from `Authorization`. No refresh token exists; clients reauthenticate with fresh Telegram data and keep the access token in memory only.
+
+Membership in PostgreSQL is the tenant-access source of truth. `GET /api/v1/workspaces/{workspaceId}` performs an access-scoped query and returns `404` for non-members to avoid tenant enumeration. Owner-only policy returns `403` to authenticated members lacking OWNER. Bot persistence exposes tenant-scoped ID lookup methods; future Flow ports must require explicit `workspaceId`. Security failures use the canonical generated `ApiError` with the request correlation ID.
+
 ## REST/API boundary and test foundation (BE-04/BE-05/TEST-01)
 
 `org.demchenko.api.web` is the inbound HTTP adapter. `CorrelationIdFilter` validates or creates `X-Correlation-ID`, keeps it in MDC only for request processing, and returns the same value in the canonical error body. `RestExceptionHandler` translates MVC/validation failures; `RestFallbackErrorController` prevents the standard Spring `/error` payload from exposing a second format. Both map through `ApiErrorMapper` to the generated OpenAPI model and expose only `code`, safe `message`, `traceId`, and sorted `fieldErrors`.
@@ -115,6 +125,35 @@ The single OpenAPI 3.1 source is `constructor-service/src/main/openapi/openapi.y
 The Maven `generate-sources` phase validates the canonical document and generates both models and tag-based interfaces into `target/generated-sources/openapi`; generated Java is never edited or committed. `PlatformStatusController` implements generated `StatusApi`, delegates to `PlatformStatusService`, and maps the application `PlatformStatus` result through `PlatformStatusMapper` to generated `StatusResponse`. Compilation, semantic `OpenApiContractTest`, ArchUnit dependency rules, mapper unit testing, and a real-HTTP `PlatformStatusIT` make contract drift visible.
 
 Surefire runs `*Test` unit/configuration/architecture/contract tests. Failsafe runs `*IT` REST/status and PostgreSQL/Testcontainers integration tests in `integration-test`/`verify`. Thus `mvn clean verify` validates and semantically audits the specification, regenerates and compiles DTO/interface usage, checks module/API dependency rules, exercises real HTTP contracts, and migrates plus validates a disposable PostgreSQL database. Docker is mandatory for the complete suite; unavailable Docker is a visible failure, not a skipped test.
+
+## Bot onboarding and management delivery (PH2)
+
+Bot credential onboarding uses persisted short transaction phases. An owner and Bot
+are resolved through a membership-scoped locking query, then an encrypted candidate
+operation is reserved and the transaction ends. Telegram `getMe` and `setWebhook`
+run without an active database transaction. Separate transactions move the operation
+from `PENDING_VERIFICATION` to `WEBHOOK_PENDING` and finally atomically activate it.
+The active credential stays untouched during replacement failures; successful
+replacement copies its encrypted envelopes to history before switching the one-to-one
+active row. A partial unique index permits only one in-progress operation per Bot,
+and persisted operations can be resumed explicitly after process restart. Telegram
+bot identity conflicts are serialized with a PostgreSQL advisory transaction lock.
+
+Tokens and per-Bot webhook secrets are AES-256-GCM versioned envelopes using random
+96-bit IVs, the configured key ID, and Bot/secret-type AAD. Key material never enters
+the schema. The registered user-Bot webhook route contains only the opaque Bot UUID.
+Phase 2 owns outbound registration and encrypted secret persistence; the future TG-02
+increment owns inbound user-Bot routing, secret-header verification, and runtime
+execution.
+
+Bot REST operations are generated from OpenAPI and owner-scoped: create/list/get/update,
+credential set/remove, and reconnect. There is no public Bot delete operation in the
+Phase 2 contract. Idempotency records are unique per workspace and key; concurrent
+unique-key races return the committed logical winner. The management adapter is
+disabled unless configured. Local long polling is opt-in, while production pins
+`WEBHOOK`, registers with bounded HTTP timeouts, and exposes a distinct inbound
+management endpoint guarded by a constant-time comparison of
+`X-Telegram-Bot-Api-Secret-Token`. `/start` emits a native `web_app` inline button.
 
 ## Архітектурні обмеження
 

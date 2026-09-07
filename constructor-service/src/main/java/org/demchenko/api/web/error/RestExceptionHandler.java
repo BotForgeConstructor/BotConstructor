@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.demchenko.api.generated.model.ApiError;
+import org.demchenko.api.application.error.SafeApiException;
 import org.demchenko.api.web.trace.CorrelationIdFilter;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,6 +34,11 @@ import java.util.UUID;
 public class RestExceptionHandler {
     private static final MediaType PROBLEM_JSON = MediaType.APPLICATION_PROBLEM_JSON;
     private final ApiErrorMapper mapper;
+
+    @ExceptionHandler(SafeApiException.class)
+    ResponseEntity<ApiError> handleSafeApiFailure(SafeApiException exception, HttpServletRequest request) {
+        return response(HttpStatus.valueOf(exception.status()), exception.code(), exception.clientMessage(), List.of(), request);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> handleBodyValidation(MethodArgumentNotValidException exception, HttpServletRequest request) {
@@ -76,6 +83,15 @@ public class RestExceptionHandler {
     ) {
         return response(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER", "Required request parameter is missing",
                 List.of(new RestFieldError(exception.getParameterName(), "Value is required")), request);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    ResponseEntity<ApiError> handleMissingHeader(
+            MissingRequestHeaderException exception,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.BAD_REQUEST, "MISSING_HEADER", "Required request header is missing",
+                List.of(new RestFieldError(exception.getHeaderName(), "Value is required")), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

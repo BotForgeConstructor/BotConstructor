@@ -1,7 +1,35 @@
 app:
+  bot:
+    webhook:
+      base-url: https://test.invalid/api/v1/telegram/webhooks
+  auth:
+    telegram:
+      max-init-data-age: 5m
+      allowed-future-skew: 30s
+    session:
+      signing-key: dGVzdC1vbmx5LXNpZ25pbmcta2V5LXdpdGgtYXQtbGVhc3QtMzItYnl0ZXMtbG9uZw==
+      issuer: https://bot-constructor.test.invalid
+      audience: bot-constructor-test-api
+      ttl: 15m
+  security:
+    bot-credentials:
+      key: QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=
+      key-id: test-v1
   web:
     url: https://test.invalid
   telegram:
+    api:
+      base-url: http://localhost:18080
+      connect-timeout: 1s
+      read-timeout: 2s
     management:
       enabled: false
       connection-mode: LONG_POLLING
+      token: 123456789:test_only_management_bot_token_value
+      username: test_management_bot
+      mini-app:
+        url: https://test.invalid/mini-app
+      webhook:
+        enabled: false
+        secret: test-management-webhook-secret
+        path: /api/v1/telegram/management/webhook

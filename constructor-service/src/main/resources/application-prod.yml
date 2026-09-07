@@ -8,11 +8,37 @@ spring:
       ddl-auto: validate
 
 app:
+  bot:
+    webhook:
+      base-url: ${APP_BOT_WEBHOOK_BASE_URL}
+  auth:
+    telegram:
+      max-init-data-age: ${APP_AUTH_TELEGRAM_MAX_INIT_DATA_AGE:5m}
+      allowed-future-skew: ${APP_AUTH_TELEGRAM_ALLOWED_FUTURE_SKEW:30s}
+    session:
+      signing-key: ${APP_SESSION_SIGNING_KEY}
+      issuer: ${APP_SESSION_ISSUER}
+      audience: ${APP_SESSION_AUDIENCE}
+      ttl: ${APP_SESSION_TTL:15m}
+  security:
+    bot-credentials:
+      key: ${APP_BOT_CREDENTIAL_ENCRYPTION_KEY}
+      key-id: ${APP_BOT_CREDENTIAL_ENCRYPTION_KEY_ID}
   web:
     url: ${APP_WEB_URL}
   telegram:
+    api:
+      base-url: ${APP_TELEGRAM_API_BASE_URL:https://api.telegram.org}
+      connect-timeout: ${APP_TELEGRAM_API_CONNECT_TIMEOUT:3s}
+      read-timeout: ${APP_TELEGRAM_API_READ_TIMEOUT:5s}
     management:
       enabled: true
-      connection-mode: ${APP_TELEGRAM_MANAGEMENT_CONNECTION_MODE:LONG_POLLING}
+      connection-mode: WEBHOOK
       token: ${APP_TELEGRAM_MANAGEMENT_TOKEN}
       username: ${APP_TELEGRAM_MANAGEMENT_USERNAME}
+      mini-app:
+        url: ${APP_TELEGRAM_MINI_APP_URL}
+      webhook:
+        enabled: true
+        secret: ${APP_TELEGRAM_MANAGEMENT_WEBHOOK_SECRET}
+        path: ${APP_TELEGRAM_MANAGEMENT_WEBHOOK_PATH:/api/v1/telegram/management/webhook}

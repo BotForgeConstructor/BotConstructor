@@ -32,6 +32,9 @@ public class WorkspaceEntity {
     @Column(name = "owner_user_id", nullable = false)
     private UUID ownerUserId;
 
+    @Column(name = "is_default", nullable = false)
+    private boolean defaultWorkspace;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
