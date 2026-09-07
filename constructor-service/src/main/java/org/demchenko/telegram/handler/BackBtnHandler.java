@@ -6,12 +6,14 @@ import org.demchenko.telegram.service.BotInputService;
 import org.demchenko.telegram.service.input.AbstractInlineKeyboardHandler;
 import org.demchenko.telegram.service.input.UpdateFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class BackBtnHandler extends AbstractInlineKeyboardHandler {
 

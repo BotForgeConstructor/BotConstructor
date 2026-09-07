@@ -98,4 +98,23 @@ class ModularArchitectureTest {
                         "org.demchenko.bot.model..", "org.demchenko.bot.data..")
                 .check(classes);
     }
+
+    @Test
+    void authenticationBoundariesKeepFrameworkAndPersistenceOutOfCoreLogic() {
+        noClasses().that().resideInAPackage("org.demchenko.auth.application..")
+                .should().dependOnClassesThat().resideInAnyPackage(
+                        "org.demchenko.auth.web..", "org.springframework.security.oauth2.jwt..")
+                .check(classes);
+
+        noClasses().that().resideInAPackage("org.demchenko.auth.web..")
+                .should().dependOnClassesThat().resideInAnyPackage(
+                        "jakarta.persistence..", "org.springframework.data..",
+                        "org.demchenko.identity.model..", "org.demchenko.workspace.model..")
+                .check(classes);
+
+        noClasses().that().resideInAPackage("org.demchenko.auth.web..")
+                .and().haveSimpleNameContaining("Controller")
+                .should().dependOnClassesThat().resideInAnyPackage("javax.crypto..", "java.security..")
+                .check(classes);
+    }
 }

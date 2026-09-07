@@ -71,8 +71,10 @@ class CorePersistenceIT {
         assertThat(tables).contains(
                 "flyway_schema_history", "platform_users", "workspaces",
                 "memberships", "bots", "user_data"
+                , "bot_credentials", "bot_idempotency_records",
+                "bot_credential_operations", "bot_credential_history"
         );
-        assertThat(flyway.info().applied()).hasSize(1);
+        assertThat(flyway.info().applied()).hasSize(4);
         assertThat(flyway.migrate().migrationsExecuted).isZero();
     }
 

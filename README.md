@@ -28,7 +28,9 @@ cd constructor-service
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-To opt into the existing management bot long-polling flow, provide a development BotFather token and username through `APP_TELEGRAM_MANAGEMENT_TOKEN` and `APP_TELEGRAM_MANAGEMENT_USERNAME`, then set `APP_TELEGRAM_MANAGEMENT_ENABLED=true`. Tokens must never be committed or logged.
+For local development, provide a development BotFather token and username through `APP_TELEGRAM_MANAGEMENT_TOKEN` and `APP_TELEGRAM_MANAGEMENT_USERNAME`, then explicitly select the management delivery mode. Production uses the webhook adapter; tokens must never be committed or logged.
+
+Mini App authentication also uses the management-bot token, even when long polling is disabled. Set `APP_SESSION_SIGNING_KEY` to a Base64-encoded secret of at least 32 random bytes; it must be independent from the bot token. The local auth defaults accept Telegram `initData` for five minutes with 30 seconds of future clock skew and issue 15-minute HS256 bearer sessions.
 
 The local datasource defaults match Compose (`localhost:5433/bot_constructor`, local user/password `bot_constructor` / `local_dev_password`). Override them with `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`. Existing volumes are retained. Flyway owns schema changes and Hibernate only validates them; Hibernate schema-mutation modes are prohibited.
 
@@ -97,7 +99,23 @@ The following environment variables are required and have no production defaults
 | `APP_WEB_URL` | Public application/WebApp URL |
 | `APP_TELEGRAM_MANAGEMENT_TOKEN` | Management bot token |
 | `APP_TELEGRAM_MANAGEMENT_USERNAME` | Management bot username |
-| `APP_TELEGRAM_MANAGEMENT_CONNECTION_MODE` | `LONG_POLLING` or `WEBHOOK`; current adapter supports the existing long-polling behavior |
+| `APP_TELEGRAM_MANAGEMENT_CONNECTION_MODE` | `DISABLED`, `POLLING` (local only), or `WEBHOOK` (production) |
+| `APP_SESSION_SIGNING_KEY` | Base64-encoded platform-session key containing at least 32 random bytes |
+| `APP_SESSION_ISSUER` | Stable HTTPS JWT issuer identifier |
+| `APP_SESSION_AUDIENCE` | Expected API audience |
+| `APP_SESSION_TTL` | Short platform-session lifetime; default `15m` |
+| `APP_AUTH_TELEGRAM_MAX_INIT_DATA_AGE` | Telegram replay window; default `5m` |
+| `APP_AUTH_TELEGRAM_ALLOWED_FUTURE_SKEW` | Allowed future clock skew; default `30s` |
+
+## Mini App authentication and tenancy
+
+`POST /api/v1/auth/telegram/session` verifies Telegram Mini App `initData` using the official first-party HMAC-SHA-256 construction and the management-bot token. Only after signature and timestamp validation does one transaction ensure the canonical User, one default Workspace, and its OWNER Membership. A PostgreSQL transaction advisory lock keyed by Telegram user ID plus database uniqueness constraints makes concurrent first login idempotent.
+
+The response contains a signed short-lived JWT (`Bearer`, 15 minutes by default). There is no refresh token or refresh endpoint: after expiry, the frontend obtains fresh Telegram `initData` and authenticates again. The frontend security contract requires keeping the token in memory only—not `localStorage` or `sessionStorage`.
+
+All `/api/v1/**` operations are authenticated by default except auth exchange, status, and health. `GET /api/v1/workspaces/{workspaceId}` is the implemented tenant-policy slice: PostgreSQL Membership is the source of truth, cross-tenant access returns `404`, an authenticated non-owner would receive `403` for owner-only operations, and missing/invalid/expired sessions return the canonical `401` error. Bot repository access has explicit `(resourceId, workspaceId)` methods; future Flow persistence must follow the same convention.
+
+Raw `initData`, its hash, bearer tokens, signing keys, and management bot tokens are never stored or logged. The five-minute age check is the MVP replay control; strict one-time replay storage is intentionally deferred and repeat authentication remains idempotent.
 
 Missing or malformed management-bot configuration fails startup with a sanitized validation message. Production always enables the management bot. `JAVA_OPTS` may contain ordinary JVM tuning and is passed by the Docker image; preview flags are not required.
 
@@ -105,4 +123,4 @@ Missing or malformed management-bot configuration fails startup with a sanitized
 
 - `telegrambots` remains pinned to 5.7.1 to preserve current `/start`, create, and video behavior. Its upgrade and isolation behind newer ports belongs to a separate Telegram adapter task.
 - Legacy `user_data` remains isolated for management-bot compatibility; new identity features use `platform_users`.
-- The current management adapter is long polling. Production webhook migration is explicitly outside BE-01–BE-03.
+- The management adapter exposes a native Mini App button and a secret-validated webhook path. Production is pinned to `WEBHOOK`; polling is restricted to explicit local development configuration. Inbound user-created bot routing remains the separately scoped TG-02 increment.

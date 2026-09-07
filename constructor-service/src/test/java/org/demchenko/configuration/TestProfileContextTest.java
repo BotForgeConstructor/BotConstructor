@@ -1,6 +1,8 @@
 package org.demchenko.configuration;
 
 import org.demchenko.telegram.config.TelegramBotConnection;
+import org.demchenko.telegram.config.ManagementWebhookConnection;
+import org.demchenko.telegram.web.ManagementWebhookController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,5 +27,7 @@ class TestProfileContextTest {
     @Test
     void startsWithoutSecretsAndDoesNotRegisterTelegramAdapter() {
         assertThat(context.getBeansOfType(TelegramBotConnection.class)).isEmpty();
+        assertThat(context.getBeansOfType(ManagementWebhookConnection.class)).isEmpty();
+        assertThat(context.getBeansOfType(ManagementWebhookController.class)).isEmpty();
     }
 }

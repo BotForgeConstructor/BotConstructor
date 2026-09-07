@@ -8,6 +8,7 @@ servers:
 tags:
   - {name: Auth}
   - {name: Workspace}
+  - {name: WorkspaceAccess}
   - {name: Bots}
   - {name: Credentials}
   - {name: Draft}
@@ -53,6 +54,17 @@ paths:
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '409': {$ref: '#/components/responses/Conflict'}
+  /api/v1/workspaces/{workspaceId}:
+    parameters:
+      - {$ref: '#/components/parameters/WorkspaceId'}
+    get:
+      tags: [WorkspaceAccess]
+      operationId: getWorkspace
+      responses:
+        '200': {description: Accessible workspace, content: {application/json: {schema: {$ref: '#/components/schemas/WorkspaceSummary'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
   /api/v1/workspaces/{workspaceId}/bots:
     parameters:
       - {$ref: '#/components/parameters/WorkspaceId'}
@@ -61,6 +73,7 @@ paths:
       operationId: listBots
       responses:
         '200': {description: Workspace bots, content: {application/json: {schema: {$ref: '#/components/schemas/BotListResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
     post:
@@ -72,6 +85,7 @@ paths:
       responses:
         '201': {description: Bot created, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
         '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
@@ -83,6 +97,7 @@ paths:
       operationId: getBot
       responses:
         '200': {description: Bot metadata, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
     patch:
@@ -92,6 +107,7 @@ paths:
       responses:
         '200': {description: Updated bot, content: {application/json: {schema: {$ref: '#/components/schemas/BotResponse'}}}}
         '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
   /api/v1/bots/{botId}/telegram-credential:
@@ -104,16 +120,34 @@ paths:
       responses:
         '200': {description: Safe credential status, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialStatusResponse'}}}}
         '400': {$ref: '#/components/responses/InvalidCredential'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '429': {$ref: '#/components/responses/RateLimited'}
         '503': {$ref: '#/components/responses/TelegramUnavailable'}
     delete:
       tags: [Credentials]
       operationId: removeBotCredential
       responses:
         '200': {description: Credential disconnected, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialStatusResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/bots/{botId}/telegram-credential/reconnect:
+    parameters:
+      - {$ref: '#/components/parameters/BotId'}
+    post:
+      tags: [Credentials]
+      operationId: reconnectBotCredential
+      responses:
+        '200': {description: Credential reconnected, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialStatusResponse'}}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '503': {$ref: '#/components/responses/TelegramUnavailable'}
   /api/v1/bots/{botId}/flows/draft:
     parameters:
       - {$ref: '#/components/parameters/BotId'}
@@ -231,7 +265,7 @@ paths:
         '503': {$ref: '#/components/responses/ServiceUnavailable'}
 components:
   securitySchemes:
-    bearerSession: {type: http, scheme: bearer, bearerFormat: opaque-session-token}
+    bearerSession: {type: http, scheme: bearer, bearerFormat: JWT}
   parameters:
     WorkspaceId: {name: workspaceId, in: path, required: true, schema: {type: string, format: uuid}}
     BotId: {name: botId, in: path, required: true, schema: {type: string, format: uuid}}
@@ -248,6 +282,7 @@ components:
     Conflict: {description: State conflict, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     PreconditionFailed: {description: Stale revision, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     InvalidCredential: {description: Invalid Telegram credential, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    RateLimited: {description: Telegram API rate limited, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     TelegramUnavailable: {description: Telegram API unavailable, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     InternalError: {description: Safe internal error, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     ServiceUnavailable: {description: Service unavailable, content: {application/problem+json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
@@ -260,9 +295,11 @@ components:
     AuthResponse:
       type: object
       additionalProperties: false
-      required: [accessToken, expiresAt, user, defaultWorkspace]
+      required: [accessToken, tokenType, expiresIn, expiresAt, user, defaultWorkspace]
       properties:
         accessToken: {type: string, minLength: 1}
+        tokenType: {type: string, const: Bearer}
+        expiresIn: {type: integer, format: int64, minimum: 1}
         expiresAt: {type: string, format: date-time}
         user: {$ref: '#/components/schemas/UserSummary'}
         defaultWorkspace: {$ref: '#/components/schemas/WorkspaceSummary'}

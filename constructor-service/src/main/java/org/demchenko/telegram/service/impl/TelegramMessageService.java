@@ -3,6 +3,7 @@ package org.demchenko.telegram.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
@@ -15,6 +16,7 @@ import java.io.InputStream;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class TelegramMessageService  {
 

@@ -9,11 +9,13 @@ import org.demchenko.telegram.service.impl.TelegramMessageService;
 import org.demchenko.telegram.service.impl.TelegramReplyKeyboardService;
 import org.demchenko.telegram.service.input.AbstractInlineKeyboardHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class CreateBtnHandler extends AbstractInlineKeyboardHandler {
 

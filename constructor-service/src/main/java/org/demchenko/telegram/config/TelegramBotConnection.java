@@ -4,12 +4,15 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.demchenko.telegram.dispetcher.BotUpdateDispatcher;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Component
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "connection-mode", havingValue = "LONG_POLLING")
 @Slf4j
 public class TelegramBotConnection extends TelegramLongPollingBot {
 

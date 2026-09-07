@@ -4,12 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.demchenko.telegram.service.BotInputService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "app.telegram.management", name = "enabled", havingValue = "true")
 public class BotUpdateDispatcher {
 
     private final List<BotInputService> handlers;
@@ -30,4 +32,3 @@ public class BotUpdateDispatcher {
         System.out.println("No handler for: " + update);
     }
 }
-
